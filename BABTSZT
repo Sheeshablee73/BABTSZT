@@ -1,0 +1,126 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+
+local Window = OrionLib:MakeWindow({Name = "Build a bunker to survive zombies tycoon GUI", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest"})
+
+local targetCFrame = CFrame.new(-664.009949, -2.24936485, -285.950043)
+local isCombinedLoopRunning = false
+local combinedLoopThread
+local isGodmodeEnabled = false
+
+local function setWalkSpeed(speed)
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+        player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = speed
+    end
+end
+
+local function teleportToCFrame(cframe)
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = cframe
+    end
+end
+
+local function holdKey(keyCode, duration)
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+    wait(duration)
+    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+end
+
+local function stopCombinedLoop()
+    isCombinedLoopRunning = false
+    if combinedLoopThread and coroutine.status(combinedLoopThread) == "suspended" then
+        coroutine.resume(combinedLoopThread)
+    end
+    holdKey(Enum.KeyCode.E, 0.1)
+end
+
+local function toggleCombinedLoop()
+    if isCombinedLoopRunning then
+        stopCombinedLoop()
+        OrionLib:MakeNotification({
+            Name = "Stopped",
+            Content = "Auto Farm Disabled",
+            Image = "rbxassetid://4483345998",
+            Time = 2
+        })
+    else
+        isCombinedLoopRunning = true
+        combinedLoopThread = coroutine.create(function()
+            while isCombinedLoopRunning do
+                local replicatedStorage = game:GetService("ReplicatedStorage")
+                local event = replicatedStorage:WaitForChild("Events"):WaitForChild("FinishMinigame")
+                
+                for i = 1, 10 do
+                    event:FireServer()
+                    wait()
+                end
+                
+                -- Hold 'E' key locally after firing events
+                holdKey(Enum.KeyCode.E, 2)
+            end
+        end)
+        coroutine.resume(combinedLoopThread)
+        OrionLib:MakeNotification({
+            Name = "Started",
+            Content = "Auto Farm Enabled",
+            Image = "rbxassetid://4483345998",
+            Time = 2
+        })
+    end
+end
+
+local function toggleGodmode()
+    local player = game.Players.LocalPlayer
+    if player and player.Character then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            isGodmodeEnabled = not isGodmodeEnabled
+            humanoid.MaxHealth = isGodmodeEnabled and math.huge or 100
+            humanoid.Health = isGodmodeEnabled and math.huge or 100
+            OrionLib:MakeNotification({
+                Name = isGodmodeEnabled and "Godmode Enabled" or "Godmode Disabled",
+                Content = isGodmodeEnabled and "Your character is now invincible." or "Your character is vulnerable again.",
+                Image = "rbxassetid://4483345998",
+                Time = 2
+            })
+        end
+    end
+end
+
+local mainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+
+mainTab:AddButton({
+    Name = "Teleport to Sell Area",
+    Callback = function()
+        teleportToCFrame(targetCFrame)
+        OrionLib:MakeNotification({
+            Name = "Teleported",
+            Content = "You have been teleported.",
+            Image = "rbxassetid://4483345998",
+            Time = 1
+        })
+    end
+})
+
+mainTab:AddButton({
+    Name = "Auto Farm",
+    Callback = function()
+        toggleCombinedLoop()
+    end
+})
+
+mainTab:AddButton({
+    Name = "Godmode",
+    Callback = function()
+        toggleGodmode()
+    end
+})
+
+OrionLib:Init()
