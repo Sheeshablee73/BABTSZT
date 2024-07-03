@@ -56,8 +56,7 @@ local function toggleCombinedLoop()
                     event:FireServer()
                     wait()
                 end
-                
-                -- Hold 'E' key locally after firing events
+
                 holdKey(Enum.KeyCode.E, 2)
             end
         end)
